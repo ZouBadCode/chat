@@ -1,87 +1,105 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardContent } from "@workspace/ui/components/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
-// 引入分隔線，以備未來擴展使用，保持與 ChatPage 相同的引入風格
-import { Separator } from "@workspace/ui/components/separator";
-import { getProfileInfo } from '@/utils/queryer';
 import { useCurrentAccount, useSuiClient } from '@mysten/dapp-kit';
-// 聯絡人介面定義
-interface Contact {
-    id: string;
-    name: string;
-    lastMessage: string;
-    avatarUrl: string;
-}
+import { getProfileInfo } from '@/utils/queryer'; 
 
-// 靜態資料
-const contacts: Contact[] = [
-    { id: '1', name: "Sui Dev Team", lastMessage: "GM! The new Move package is ready.", avatarUrl: "/avatars/sui.png" },
-    { id: '2', name: "Alice (Wallet 0x...)", lastMessage: "Sent 5 SUI to your address.", avatarUrl: "/avatars/alice.png" },
-    { id: '3', name: "Validator Node 1", lastMessage: "Transaction confirmed: #0xabc...", avatarUrl: "/avatars/node.png" },
-    { id: '4', name: "Web3 Frontend", lastMessage: "Check out the new UI component!", avatarUrl: "/avatars/web3.png" },
-    { id: '5', name: "Market Data Bot", lastMessage: "SUI Price: $1.15 (+3.2%).", avatarUrl: "/avatars/bot.png" },
-    { id: '6', name: "Security Alert", lastMessage: "Suspicious login attempt detected.", avatarUrl: "/avatars/security.png" },
-    { id: '7', name: "DeFi Protocol X", lastMessage: "Your staking reward has been claimed.", avatarUrl: "/avatars/protocol.png" },
-];
+export default function ChatRoomListPage() {
+    const router = useRouter();
+    const suiClient = useSuiClient();
+    const currentAccount = useCurrentAccount();
 
-/**
- * FriendList 組件：顯示聯繫人列表，並應用 ChatPage 的深色風格。
- */
-export default function FriendListPage() {
-    // 使用 useState 來管理當前選中的聊天 ID
-    const [activeChatId, setActiveChatId] = useState('1');
-   
+    // ⭐️ 這裡我們只存 ID 字串就好
+    const [chatRoomIds, setChatRoomIds] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const initData = async () => {
+            if (!currentAccount?.address) return;
+
+            try {
+                // 1. 取得 Profile
+                const profile = await getProfileInfo({ 
+                    suiClient, 
+                    address: currentAccount.address 
+                });
+
+                if (profile) {
+                    // 2. 假設 Profile 裡有一個欄位叫 joined_chatrooms 存了 vector<ID>
+                    // 如果你的架構不同（例如是透過 Event 抓取的），這裡要改成你的抓法
+                    const roomIds = await mockFetchMyRoomIds(profile.profileId);
+                    setChatRoomIds(roomIds);
+                }
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        initData();
+    }, [suiClient, currentAccount]);
+
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
-            {/* 應用 ChatPage 的 Card 風格：深色背景、模糊、邊框 */}
-            <Card className="flex h-full w-full max-w-sm flex-col border-slate-800 bg-slate-900/70 backdrop-blur">
-
-                {/* 標題區域：使用 ChatPage 的 border-b 和 padding 樣式 */}
-                <CardHeader className="flex-shrink-0 border-b border-slate-800 py-4 px-4">
-                    {/* 標題文字使用 text-slate-50 和 font-semibold */}
-                    <h2 className="text-lg font-semibold text-slate-50">Friend List</h2>
-                    <p className="text-xs text-slate-400">7 contacts online</p>
+            <Card className="flex h-[600px] w-full max-w-md flex-col border-slate-800 bg-slate-900/70 backdrop-blur">
+                <CardHeader className="border-b border-slate-800 py-4 px-4">
+                    <h2 className="text-lg font-semibold text-slate-50">Chat Rooms</h2>
+                    <p className="text-xs text-slate-400">ID Only Mode</p>
                 </CardHeader>
 
-                {/* 內容區域：應用 flex-1 填滿空間 */}
                 <CardContent className="p-0 flex-1">
-                    <ScrollArea className="h-full p-1">
-                        {contacts.map((contact) => (
+                    <ScrollArea className="h-full p-2">
+                        {chatRoomIds.map((id) => (
                             <div
-                                key={contact.id}
-                                onClick={() => setActiveChatId(contact.id)}
-                                // 樣式調整：
-                                // 1. 選中狀態使用 `bg-slate-800` 和 `ring-emerald-400`
-                                // 2. 懸停狀態使用 `hover:bg-slate-800/50`
-                                className={`flex items-center p-3 m-1 rounded-lg cursor-pointer transition-all duration-200 
-                                    ${contact.id === activeChatId
-                                        ? 'bg-slate-800 ring-2 ring-emerald-400/50' // 參考 ChatPage 的綠色強調色
-                                        : 'hover:bg-slate-800/50' // 使用深色懸停效果
-                                    }`
-                                }
+                                key={id}
+                                onClick={() => router.push(`/chatroom/${id}`)}
+                                className="flex items-center p-4 m-1 rounded-lg cursor-pointer hover:bg-slate-800/60 border border-slate-800 transition-all"
                             >
-                                {/* 聯繫人頭像：使用 slate-700 邊框 */}
-                                <Avatar className="h-10 w-10 border-2 border-slate-700 flex-shrink-0">
-                                    <AvatarImage src={contact.avatarUrl} alt={contact.name} />
-                                    {/* 使用 slate-800/slate-200 作為 fallback 顏色 */}
-                                    <AvatarFallback className="bg-slate-800 text-slate-200">{contact.name[0]}</AvatarFallback>
-                                </Avatar>
+                                {/* 用一個簡單的 Hashicon 或圖標 */}
+                                <div className="h-10 w-10 rounded-full bg-slate-700 flex items-center justify-center mr-3">
+                                    <span className="text-slate-300 text-xs">#</span>
+                                </div>
 
-                                {/* 聯繫人資訊 */}
-                                <div className="ml-3 overflow-hidden min-w-0">
-                                    {/* 名稱使用 text-white (等同於 text-slate-50) */}
-                                    <p className="font-semibold truncate text-slate-50">{contact.name}</p>
-                                    {/* 訊息使用 text-slate-400 輔助色 */}
-                                    <p className="text-sm text-slate-400 truncate">{contact.lastMessage}</p>
+                                <div className="overflow-hidden">
+                                    {/* ⭐️ 直接顯示 ID，截斷中間讓它好看一點 */}
+                                    <p className="text-sm font-mono text-slate-300 truncate">
+                                        {formatAddress(id)}
+                                    </p>
+                                    <p className="text-xs text-slate-500">
+                                        Click to enter
+                                    </p>
                                 </div>
                             </div>
                         ))}
+                        
+                        {chatRoomIds.length === 0 && !isLoading && (
+                            <div className="p-4 text-center text-slate-500">No rooms found</div>
+                        )}
                     </ScrollArea>
                 </CardContent>
             </Card>
         </div>
     );
+}
+
+// --- 輔助函式 ---
+
+// 讓長長的 ID 變成 "0x1234...abcd"
+function formatAddress(addr: string) {
+    if (!addr) return "";
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
+
+// 模擬抓取 ID 列表 (請替換成你真實的 Profile 欄位讀取)
+async function mockFetchMyRoomIds(profileId: string): Promise<string[]> {
+    // 假設你的 Profile 物件裡有一個欄位叫 `rooms: vector<ID>`
+    // 這裡先回傳假資料測試
+    return [
+        "0x0527c731057c72f0729792613764834479579698d248386a3472093740284720",
+        "0x127c731057c72f0729792613764834479579698d248386a3472093740284721",
+    ];
 }
