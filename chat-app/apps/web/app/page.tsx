@@ -14,6 +14,7 @@ import TripleInputAction from "@/components/create_chat/create_chat_room_comp"
 import { createProfile } from "@/utils/tx/create_profile";
 import { useRouter } from "next/navigation"
 import { getProfileCap } from "@/utils/queryer";
+import { SecretGeneratorButton } from "@/components/secret-generator-button";
 export default function Page() {
   const router = useRouter()
   const suiClient = useSuiClient();

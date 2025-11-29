@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Card, CardHeader, CardContent } from "@workspace/ui/components/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
+// 引入分隔線，以備未來擴展使用，保持與 ChatPage 相同的引入風格
+import { Separator } from "@workspace/ui/components/separator";
 
 // 聯絡人介面定義
 interface Contact {
@@ -13,7 +15,7 @@ interface Contact {
     avatarUrl: string;
 }
 
-// 靜態資料 (實際應用中會從 API 取得)
+// 靜態資料
 const contacts: Contact[] = [
     { id: '1', name: "Sui Dev Team", lastMessage: "GM! The new Move package is ready.", avatarUrl: "/avatars/sui.png" },
     { id: '2', name: "Alice (Wallet 0x...)", lastMessage: "Sent 5 SUI to your address.", avatarUrl: "/avatars/alice.png" },
@@ -25,54 +27,60 @@ const contacts: Contact[] = [
 ];
 
 /**
- * ChatList 組件：顯示聊天聯繫人列表，並允許用戶選擇當前聊天。
+ * FriendList 組件：顯示聯繫人列表，並應用 ChatPage 的深色風格。
  */
-export default function Page() {
-    // 使用 useState 來管理當前選中的聊天 ID，初始值設為第一個聯繫人
+export default function FriendListPage() {
+    // 使用 useState 來管理當前選中的聊天 ID
     const [activeChatId, setActiveChatId] = useState('1');
 
-    return (<>
-        <Card className="h-full w-150 bg-gray-900 border-gray-700 shadow-xl flex flex-col">
-            {/* 標題區域 */}
-            <CardHeader className="p-4 border-b border-gray-800 flex-shrink-0">
-                <h2 className="text-xl font-bold text-teal-400">Conversations</h2>
-            </CardHeader>
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
+            {/* 應用 ChatPage 的 Card 風格：深色背景、模糊、邊框 */}
+            <Card className="flex h-full w-full max-w-sm flex-col border-slate-800 bg-slate-900/70 backdrop-blur">
 
-            {/* 內容區域：包裹 ScrollArea 並使用 flex-1 填滿剩餘空間 */}
-            <CardContent className="p-0 flex-1">
-                {/* ScrollArea: 使用 h-full 確保它填滿 CardContent 的整個高度。
-                  移除硬編碼的 h-[calc(100vh-80px)]，以增加組件的靈活性。
-                */}
-                <ScrollArea className="h-full p-1">
-                    {contacts.map((contact) => (
-                        <div
-                            key={contact.id}
-                            // 點擊時更新選中的聊天 ID
-                            onClick={() => setActiveChatId(contact.id)}
-                            // 透過條件判斷添加選中狀態的樣式 (未來感高亮)
-                            className={`flex items-center p-3 m-1 rounded-lg cursor-pointer transition-all duration-200 
-                                ${contact.id === activeChatId
-                                    ? 'bg-teal-600/30 ring-2 ring-teal-500' // 選中樣式
-                                    : 'hover:bg-gray-800' // 懸停樣式
-                                }`
-                            }
-                        >
-                            {/* 聯繫人頭像 */}
-                            <Avatar className="h-10 w-10 border-2 border-teal-500 flex-shrink-0">
-                                <AvatarImage src={contact.avatarUrl} alt={contact.name} />
-                                <AvatarFallback className="bg-teal-700 text-white">{contact.name[0]}</AvatarFallback>
-                            </Avatar>
+                {/* 標題區域：使用 ChatPage 的 border-b 和 padding 樣式 */}
+                <CardHeader className="flex-shrink-0 border-b border-slate-800 py-4 px-4">
+                    {/* 標題文字使用 text-slate-50 和 font-semibold */}
+                    <h2 className="text-lg font-semibold text-slate-50">Friend List</h2>
+                    <p className="text-xs text-slate-400">7 contacts online</p>
+                </CardHeader>
 
-                            {/* 聯繫人資訊 */}
-                            <div className="ml-3 overflow-hidden min-w-0">
-                                <p className="font-semibold truncate text-white">{contact.name}</p>
-                                <p className="text-sm text-gray-400 truncate">{contact.lastMessage}</p>
+                {/* 內容區域：應用 flex-1 填滿空間 */}
+                <CardContent className="p-0 flex-1">
+                    <ScrollArea className="h-full p-1">
+                        {contacts.map((contact) => (
+                            <div
+                                key={contact.id}
+                                onClick={() => setActiveChatId(contact.id)}
+                                // 樣式調整：
+                                // 1. 選中狀態使用 `bg-slate-800` 和 `ring-emerald-400`
+                                // 2. 懸停狀態使用 `hover:bg-slate-800/50`
+                                className={`flex items-center p-3 m-1 rounded-lg cursor-pointer transition-all duration-200 
+                                    ${contact.id === activeChatId
+                                        ? 'bg-slate-800 ring-2 ring-emerald-400/50' // 參考 ChatPage 的綠色強調色
+                                        : 'hover:bg-slate-800/50' // 使用深色懸停效果
+                                    }`
+                                }
+                            >
+                                {/* 聯繫人頭像：使用 slate-700 邊框 */}
+                                <Avatar className="h-10 w-10 border-2 border-slate-700 flex-shrink-0">
+                                    <AvatarImage src={contact.avatarUrl} alt={contact.name} />
+                                    {/* 使用 slate-800/slate-200 作為 fallback 顏色 */}
+                                    <AvatarFallback className="bg-slate-800 text-slate-200">{contact.name[0]}</AvatarFallback>
+                                </Avatar>
+
+                                {/* 聯繫人資訊 */}
+                                <div className="ml-3 overflow-hidden min-w-0">
+                                    {/* 名稱使用 text-white (等同於 text-slate-50) */}
+                                    <p className="font-semibold truncate text-slate-50">{contact.name}</p>
+                                    {/* 訊息使用 text-slate-400 輔助色 */}
+                                    <p className="text-sm text-slate-400 truncate">{contact.lastMessage}</p>
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </ScrollArea>
-            </CardContent>
-        </Card>
-    </>
+                        ))}
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+        </div>
     );
 }
