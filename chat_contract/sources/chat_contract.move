@@ -69,6 +69,16 @@ public fun create_chat_room(
     transfer::share_object(chatroom);
 }
 
+public fun update_encryption_key(
+    chatroom: &mut Chatroom,
+    profile_cap: &ProfileCap,
+    new_key: vector<u8>,
+    ctx: &mut TxContext,
+) {
+    assert!(iterate_profiles_in_chatroom(chatroom, profile_cap, ctx), EInvalidProfileCap);
+    chatroom.encryption_key = new_key;
+}
+
 public fun add_chatroom_profile(
     chatroom: &mut Chatroom,
     profile_cap: &ProfileCap,
