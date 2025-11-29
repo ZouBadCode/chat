@@ -34,7 +34,7 @@ export async function getCoin(params: { suiClient: SuiClient, address: string, t
     return undefined;
 }
 
-export async function getProfileCap(params: { suiClient: SuiClient, address: string, type?: string }): Promise< string | undefined > {
+export async function getProfileCap(params: { suiClient: SuiClient, address: string, type?: string }): Promise< any  > {
     try {
         console.log('getProfileCap called with address:', params.address);
         const result = await params.suiClient.getOwnedObjects({
@@ -45,11 +45,11 @@ export async function getProfileCap(params: { suiClient: SuiClient, address: str
         },
     );
         console.log('getProfileCap result:', result.data[0].data?.objectId);
+        return result;
     } catch (error) {
         console.error('Error in getCoin:', error);
         throw error;
     }
-    return undefined;
 }
 
 export async function getProfileInfo(params: { suiClient: SuiClient, address: string}): Promise< any | undefined > {
