@@ -14,8 +14,10 @@ import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar";
 import { Separator } from "@workspace/ui/components/separator";
 import { useCurrentAccount, useSuiClient } from "@mysten/dapp-kit";
 import { getProfileCap } from "@/utils/queryer";
+// 引入圖標，用於 ChatAttachmentOptions 和觸發按鈕
+import { Paperclip, Image, Gift, Wallet, Smile, X, Plus } from "lucide-react";
 
-
+// --- 介面定義 (與您原有的相同) ---
 type Author = "me" | "other";
 
 type Message = {
@@ -26,35 +28,87 @@ type Message = {
   createdAt: string;
 };
 
+// --- ChatAttachmentOptions 組件 (從上一輪對話複製並整合到此) ---
+interface AttachmentOption {
+  name: string;
+  icon: React.ElementType;
+  action: () => void;
+  colorClass: string;
+}
+
+// 接收一個 prop 來處理關閉動作
+function ChatAttachmentOptions({ onClose }: { onClose: () => void }) {
+
+  const handleAttach = (item: string) => {
+    console.log(`Action: Adding ${item}`);
+    // 這裡可以選擇在點擊後立即關閉列表
+    // onClose(); 
+  };
+
+  const options: AttachmentOption[] = [
+    { name: "Image", icon: Image, action: () => handleAttach("Image"), colorClass: "text-blue-400 hover:text-blue-300" },
+    { name: "File", icon: Paperclip, action: () => handleAttach("File"), colorClass: "text-slate-400 hover:text-slate-300" },
+    { name: "SUI Asset", icon: Wallet, action: () => handleAttach("Asset"), colorClass: "text-emerald-400 hover:text-emerald-300" },
+    { name: "Gift (NFT)", icon: Gift, action: () => handleAttach("Gift"), colorClass: "text-pink-400 hover:text-pink-300" },
+    { name: "Emoji", icon: Smile, action: () => handleAttach("Emoji"), colorClass: "text-yellow-400 hover:text-yellow-300" },
+  ];
+
+  return (
+    // 使用深色背景和邊框，風格類似於 ChatPage 的 CardFooter
+    <div className="w-full bg-slate-900/70 border-t border-slate-800 p-2 shadow-xl">
+      <div className="flex items-center gap-3">
+        {options.map((option) => (
+          <Button
+            key={option.name}
+            onClick={option.action}
+            variant="ghost"
+            size="sm"
+            className={`
+              flex flex-col items-center justify-center p-1 h-auto w-16 text-xs transition-colors duration-200 
+              ${option.colorClass} 
+              hover:bg-slate-800/70
+            `}
+          >
+            <option.icon className="h-5 w-5 mb-1" />
+            <span className="text-slate-400 group-hover:text-slate-200">{option.name}</span>
+          </Button>
+        ))}
+
+        <div className="h-8 w-px bg-slate-800/50 mx-1" />
+
+        {/* 關閉按鈕，觸發 ChatPage 傳入的 onClose 函式 */}
+        <Button
+          onClick={onClose}
+          variant="ghost"
+          size="icon"
+          className="text-slate-500 hover:bg-slate-800 hover:text-slate-300 ml-auto"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// --- ChatPage 組件 (修改部分) ---
 export default function ChatPage() {
 
+  // ... (原有的 Hooks 和靜態資料) ...
   const currentAccount = useCurrentAccount();
   const suiClient = useSuiClient();
-  console.log("Current Account:", currentAccount);
 
-  getProfileCap({
-    suiClient: suiClient,
-    address: currentAccount?.address || "",
-  })
+  getProfileCap({ suiClient: suiClient, address: currentAccount?.address || "" })
+
   const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      author: "other",
-      name: "Bot",
-      content: "Hey! This is your brand new chat room UI 👋",
-      createdAt: "10:00",
-    },
-    {
-      id: 2,
-      author: "me",
-      name: "You",
-      content: "Nice, UI looks clean.",
-      createdAt: "10:01",
-    },
+    { id: 1, author: "other", name: "Bot", content: "Hey! This is your brand new chat room UI 👋", createdAt: "10:00" },
+    { id: 2, author: "me", name: "You", content: "Nice, UI looks clean.", createdAt: "10:01" },
   ]);
 
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // 💥 [新增狀態] 控制附件列表顯示
+  const [showAttachments, setShowAttachments] = useState(false);
 
   // Auto scroll to bottom when messages change
   useEffect(() => {
@@ -88,15 +142,11 @@ export default function ChatPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
       <Card className="flex h-[600px] w-full max-w-2xl flex-col border-slate-800 bg-slate-900/70 backdrop-blur">
-        {/* Header */}
+        {/* Header (不變) */}
         <CardHeader className="flex flex-row items-center justify-between border-b border-slate-800 py-4">
           <div>
-            <h1 className="text-lg font-semibold text-slate-50">
-              General Chat
-            </h1>
-            <p className="text-xs text-slate-400">
-              A simple chat room built with shadcn/ui
-            </p>
+            <h1 className="text-lg font-semibold text-slate-50">General Chat</h1>
+            <p className="text-xs text-slate-400">A simple chat room built with shadcn/ui</p>
           </div>
           <div className="flex items-center gap-2">
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400">
@@ -106,7 +156,7 @@ export default function ChatPage() {
           </div>
         </CardHeader>
 
-        {/* Messages */}
+        {/* Messages (不變) */}
         <CardContent className="flex-1 p-0">
           <ScrollArea className="h-full">
             <div ref={scrollRef} className="flex h-full flex-col gap-4 p-4">
@@ -119,12 +169,29 @@ export default function ChatPage() {
 
         <Separator className="bg-slate-800" />
 
-        {/* Input */}
+        {/* 💥 [條件渲染] 在分隔線和 Input 之間插入附件選項列表 */}
+        {showAttachments && <ChatAttachmentOptions onClose={() => setShowAttachments(false)} />}
+
+        {/* Input (修改部分) */}
         <CardFooter className="p-3">
           <form
             onSubmit={handleSend}
             className="flex w-full items-center gap-2"
           >
+            {/* 💥 [新增按鈕] 切換附件列表的顯示 */}
+            <Button
+              type="button" // 設置為 button 類型，避免觸發 form submit
+              onClick={() => setShowAttachments(!showAttachments)}
+              variant="ghost"
+              size="icon"
+              className={`
+                shrink-0 text-slate-400 hover:bg-slate-800 hover:text-slate-50 transition-all duration-200
+                ${showAttachments ? 'rotate-45 text-emerald-400' : ''} 
+              `}
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -144,9 +211,10 @@ export default function ChatPage() {
   );
 }
 
+// --- ChatMessage 組件 (不變) ---
 function ChatMessage({ message }: { message: Message }) {
   const isMe = message.author === "me";
-
+  // ... (原有的 ChatMessage 程式碼) ...
   return (
     <div
       className={
