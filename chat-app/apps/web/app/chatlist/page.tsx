@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardContent } from "@workspace/ui/components/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
 // 引入分隔線，以備未來擴展使用，保持與 ChatPage 相同的引入風格
 import { Separator } from "@workspace/ui/components/separator";
-
+import { getProfileInfo } from '@/utils/queryer';
+import { useCurrentAccount, useSuiClient } from '@mysten/dapp-kit';
 // 聯絡人介面定義
 interface Contact {
     id: string;
@@ -32,7 +33,7 @@ const contacts: Contact[] = [
 export default function FriendListPage() {
     // 使用 useState 來管理當前選中的聊天 ID
     const [activeChatId, setActiveChatId] = useState('1');
-
+   
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
             {/* 應用 ChatPage 的 Card 風格：深色背景、模糊、邊框 */}

@@ -5,6 +5,13 @@ import { CoinBalance, CoinStruct, DynamicFieldInfo, PaginatedCoins, SuiObjectRes
 import { packageID } from "./package";
 import { Filter } from "lucide-react";
 
+export interface ProfileInfo {
+  profileId: string;
+  name?: string; 
+  avatarUrl?: string;
+  bio?: string;
+  friendsList?: string[];
+}
 
 /**
  * Function to get all coins or filter by specific coin type
@@ -14,12 +21,12 @@ import { Filter } from "lucide-react";
  * @param {string} [params.type] - Optional coin type to filter by
  * @returns {Promise<CoinStruct[] | undefined>} Array of coins or undefined if pending
  */
-export async function getCoin(params: { suiClient: SuiClient, address: string, type?: string }): Promise<CoinStruct[] | undefined > {
+export async function getCoin(params: { suiClient: SuiClient, address: string, type?: string }): Promise<CoinStruct[] | undefined> {
     try {
         const result = await params.suiClient.getAllCoins({
             owner: params.address
         });
-        
+
         if (result && result.data) {
             if (!params.type) {
                 return result.data;
@@ -34,17 +41,21 @@ export async function getCoin(params: { suiClient: SuiClient, address: string, t
     return undefined;
 }
 
-export async function getProfileCap(params: { suiClient: SuiClient, address: string, type?: string }): Promise< any  > {
+export async function getProfileCap(params: { suiClient: SuiClient, address: string, type?: string }): Promise<any> {
     try {
         console.log('getProfileCap called with address:', params.address);
         const result = await params.suiClient.getOwnedObjects({
             owner: params.address,
             filter: {
                 Package: packageID,
+            },
+            options: {
+                showType: true,
+                showContent: true
             }
         },
-    );
-        console.log('getProfileCap result:', result.data[0].data?.objectId);
+        );
+        console.log('getProfileCap result:', result);
         return result;
     } catch (error) {
         console.error('Error in getCoin:', error);
@@ -52,19 +63,32 @@ export async function getProfileCap(params: { suiClient: SuiClient, address: str
     }
 }
 
-export async function getProfileInfo(params: { suiClient: SuiClient, address: string}): Promise< any | undefined > {
+export async function getProfileInfo(params: { suiClient: SuiClient, address: string }): Promise<ProfileInfo | undefined> {
     try {
         const profileCap = await getProfileCap({
             suiClient: params.suiClient,
             address: params.address,
         });
+        console.log('getProfileInfo profileCap:', profileCap.data[0].data?.content.fields.profile_id);
+        const profileId = profileCap.data[0].data?.content.fields.profile_id;
         
+        const profileObject = await params.suiClient.getObject({
+            id: profileId,
+            options: { showType: true, showContent: true }
+        });
+        console.log('getProfileInfo profileObject:', profileObject);
+        return {
+            profileId: profileId,
+            name: profileObject.data?.content.fields.name,
+            avatarUrl: profileObject.data?.content.fields.avatar_url,
+            bio: profileObject.data?.content.fields.bio,
+            friendsList: profileObject.data?.content.fields.friends,
+        }           
     }
     catch (error) {
         console.error('Error in getProfileInfo:', error);
         throw error;
     }
-    return undefined;
 }
 
 /**
@@ -79,7 +103,7 @@ export async function getDynamicF(params: { suiClient: SuiClient, object: string
         const result = await params.suiClient.getDynamicFields({
             parentId: params.object
         });
-        
+
         if (result && result.data) {
             return result.data;
         }
@@ -103,15 +127,15 @@ export async function getVaultAndOwnerCap(params: { suiClient: SuiClient, accoun
             owner: params.accountAddress,
             options: { showType: true, showContent: true }
         });
-        
+
         if (result && result.data) {
             const ownerCapObjects = result.data.filter((obj) =>
                 obj.data?.type?.includes(params.packageName + "::sea_vault::OwnerCap")
             );
-            
+
             const vaultID = (ownerCapObjects[0]?.data?.content as any)?.fields?.vaultID || null;
             const ownerCapId = ownerCapObjects[0]?.data?.objectId || null;
-            
+
             return { ownerCapObjects, vaultID, ownerCapId };
         }
     } catch (error) {
@@ -126,7 +150,7 @@ export async function getVaultField(params: { suiClient: SuiClient, vaultID: str
             id: params.vaultID,
             options: { showType: true, showContent: true }
         });
-        
+
         if (result && result.data) {
             console.log('getVaultField result:', (result.data as any).content?.fields?.cap_percentage);
             return result.data;
@@ -148,7 +172,7 @@ export async function getVaultDynamicFields(params: { suiClient: SuiClient, vaul
         const result = await params.suiClient.getDynamicFields({
             parentId: params.vaultID
         });
-        
+
         if (result && result.data) {
             return result.data;
         }
@@ -173,7 +197,7 @@ export async function getCertainType(params: { suiClient: SuiClient, address: st
             owner: params.address,
             options: { showType: true, showContent: true }
         });
-        
+
         if (result && result.data) {
             return result.data.filter(item => item.data?.type?.includes(params.type));
         }
@@ -190,7 +214,7 @@ export async function getCertainField(params: { suiClient: SuiClient, objID: str
             id: params.objID,
             options: { showType: true, showContent: true }
         });
-        
+
         if (result && result.data) {
             return result.data;
         }
@@ -214,9 +238,9 @@ export async function getMyReceipts(params: { suiClient: SuiClient, address: str
             owner: params.address,
             options: { showType: true, showContent: true }
         });
-        
+
         if (result && result.data) {
-            return result.data.filter(item => 
+            return result.data.filter(item =>
                 item.data?.type?.includes(params.packageName + "::subscription::Receipt")
             );
         }

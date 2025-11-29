@@ -59,6 +59,7 @@ export default function Page() {
     };
     checkProfile();
   }, [currentAccount?.address, suiClient]);
+  
   // 3. 建立 Profile 的處理函式
   const handleCreateProfile = async (v1: string, v2: string, v3: string) => {
     try {
