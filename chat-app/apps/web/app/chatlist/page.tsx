@@ -16,7 +16,6 @@ import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { Button } from "@workspace/ui/components/button";
 import { getProfileInfo, getProfileCap, FriendChat, getFriendList } from "@/utils/queryer";
 import { add_friend } from "@/utils/tx/add_friend";
-import { get } from "http";
 export default function FriendListPage() {
     const router = useRouter();
     const suiClient = useSuiClient();
@@ -113,17 +112,12 @@ export default function FriendListPage() {
         init();
     }, [suiClient, currentAccount]);
 
-    const handleCreateChat = async () => {
+    const handleCreateChat = () => {
         try {
-            const newFriendProfile = await getProfileInfo({
-                suiClient,
-                address: newFriendInput,
-            });
-            if (!newFriendProfile) {
-                alert("Friend profile not found");
-                return;
-            }
-            const tx = add_friend(ProfileCap, ProfileId, newFriendProfile.profileId);
+            console.log("ProfileCap:", ProfileCap);
+            console.log("ProfileId:", ProfileId);
+            
+            const tx = add_friend(ProfileCap, ProfileId, newFriendInput);
             signAndExecuteTransaction(
                 {
                     transaction: tx,
