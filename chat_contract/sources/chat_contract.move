@@ -143,7 +143,7 @@ public fun add_chatroom_profile(
     vector::push_back(&mut chatroom.profile, object::id(profile));
 }
 
-entry fun profile_seal_approve(
+entry fun seal_approve_profile(
     id: vector<u8>,
     profile_cap: &ProfileCap,
     chatroom: &Chatroom,

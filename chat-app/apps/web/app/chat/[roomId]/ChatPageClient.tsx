@@ -290,7 +290,7 @@ export default function ChatPageClient({ roomId }: { roomId: string }) {
                                 const bytes = hexToBytes(roomId);
                                 const tx = new Transaction();
                                 tx.moveCall({
-                                    target: `${packageID}::chat_contract::profile_seal_approve`,
+                                    target: `${packageID}::chat_contract::seal_approve_profile`,
                                     arguments: [
                                         tx.pure.vector('u8', bytes),
                                         tx.object(profileCapId),
