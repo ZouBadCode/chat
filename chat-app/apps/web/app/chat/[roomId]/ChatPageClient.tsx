@@ -208,7 +208,7 @@ export default function ChatPageClient({ roomId }: { roomId: string }) {
                 for (const msg of data.messages) {
                     try {
                         // Fetch Blob from Aggregator
-                        const blobRes = await fetch(`https://aggregator.testnet.walrus.atalma.io/v1/blobs/${msg.blobId}`);
+                        const blobRes = await fetch(`https://aggregator.testnet.walrus.atalma.io/v1/blobs/${msg.blob_id}`);
                         if (!blobRes.ok) continue;
                         const encryptedText = await blobRes.text();
 
@@ -229,7 +229,7 @@ export default function ChatPageClient({ roomId }: { roomId: string }) {
                         const msgBlob: MessageBlob = JSON.parse(decryptedJson);
 
                         loadedMessages.push({
-                            id: msg.blobId,
+                            id: msg.blob_id,
                             author: msg.sender === currentAccount?.address ? 'me' : 'other',
                             name: msg.sender === currentAccount?.address ? 'You' : 'Friend',
                             content: msgBlob.file,
@@ -237,7 +237,7 @@ export default function ChatPageClient({ roomId }: { roomId: string }) {
                             createdAt: new Date(msg.timestamp).toTimeString().slice(0, 5)
                         });
                     } catch (e) {
-                        console.error("Failed to load message", msg.blobId, e);
+                        console.error("Failed to load message", msg.blob_id, e);
                     }
                 }
                 setMessages(loadedMessages);
