@@ -2,82 +2,103 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardHeader, CardContent } from "@workspace/ui/components/card";
-import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { useCurrentAccount, useSuiClient } from '@mysten/dapp-kit';
-import { getProfileInfo } from '@/utils/queryer'; 
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { getProfileInfo } from '@/utils/queryer';
 
-export default function ChatRoomListPage() {
+export default function FriendListPage() {
     const router = useRouter();
     const suiClient = useSuiClient();
     const currentAccount = useCurrentAccount();
 
-    // ⭐️ 這裡我們只存 ID 字串就好
-    const [chatRoomIds, setChatRoomIds] = useState<string[]>([]);
+    const [friends, setFriends] = useState<FriendChat[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const initData = async () => {
+        const init = async () => {
             if (!currentAccount?.address) return;
-
+            setIsLoading(true);
+            
             try {
-                // 1. 取得 Profile
-                const profile = await getProfileInfo({ 
-                    suiClient, 
-                    address: currentAccount.address 
-                });
-
-                if (profile) {
-                    // 2. 假設 Profile 裡有一個欄位叫 joined_chatrooms 存了 vector<ID>
-                    // 如果你的架構不同（例如是透過 Event 抓取的），這裡要改成你的抓法
-                    const roomIds = await mockFetchMyRoomIds(profile.profileId);
-                    setChatRoomIds(roomIds);
+                // A. 拿到我的 Profile
+                const myProfile = await getProfileInfo({ suiClient, address: currentAccount.address });
+                
+                if (myProfile) {
+                    // B. 取得聊天室 ID 列表 (這裡你需要根據你的合約邏輯修改)
+                    // 假設 myProfile 裡沒有存 chatrooms，我們先用假資料測試
+                    // 在真實情況，你可能要用 suiClient.getOwnedObjects 篩選 Chatroom 類型
+                    const myChatRoomIds = await mockGetMyChatRooms(myProfile.profileId);
+                    
+                    // C. 核心：把 ID 轉成朋友資料
+                    const enrichedFriends = await fetchFriendList(
+                        suiClient, 
+                        myProfile.profileId, 
+                        myChatRoomIds
+                    );
+                    
+                    setFriends(enrichedFriends);
                 }
-            } catch (error) {
-                console.error(error);
+            } catch (e) {
+                console.error(e);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        initData();
+        init();
     }, [suiClient, currentAccount]);
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
-            <Card className="flex h-[600px] w-full max-w-md flex-col border-slate-800 bg-slate-900/70 backdrop-blur">
-                <CardHeader className="border-b border-slate-800 py-4 px-4">
-                    <h2 className="text-lg font-semibold text-slate-50">Chat Rooms</h2>
-                    <p className="text-xs text-slate-400">ID Only Mode</p>
+            <Card className="flex h-[600px] w-full max-w-sm flex-col border-slate-800 bg-slate-900/70 backdrop-blur">
+                <CardHeader className="flex-shrink-0 border-b border-slate-800 py-4 px-4">
+                    <h2 className="text-lg font-semibold text-slate-50">Friends</h2>
+                    <p className="text-xs text-slate-400">
+                        {isLoading ? "Loading..." : `${friends.length} chats`}
+                    </p>
                 </CardHeader>
 
                 <CardContent className="p-0 flex-1">
-                    <ScrollArea className="h-full p-2">
-                        {chatRoomIds.map((id) => (
-                            <div
-                                key={id}
-                                onClick={() => router.push(`/chatroom/${id}`)}
-                                className="flex items-center p-4 m-1 rounded-lg cursor-pointer hover:bg-slate-800/60 border border-slate-800 transition-all"
-                            >
-                                {/* 用一個簡單的 Hashicon 或圖標 */}
-                                <div className="h-10 w-10 rounded-full bg-slate-700 flex items-center justify-center mr-3">
-                                    <span className="text-slate-300 text-xs">#</span>
-                                </div>
+                    <ScrollArea className="h-full p-1">
+                        {/* Loading 狀態 */}
+                        {isLoading && (
+                            <div className="flex justify-center p-4 text-slate-500">Syncing friends...</div>
+                        )}
 
-                                <div className="overflow-hidden">
-                                    {/* ⭐️ 直接顯示 ID，截斷中間讓它好看一點 */}
-                                    <p className="text-sm font-mono text-slate-300 truncate">
-                                        {formatAddress(id)}
+                        {/* 列表渲染 */}
+                        {!isLoading && friends.map((friend) => (
+                            <div
+                                key={friend.id}
+                                onClick={() => router.push(`/chat/${friend.id}`)} // 點擊跳轉到聊天室 ID
+                                className="flex items-center p-3 m-1 rounded-lg cursor-pointer transition-all duration-200 hover:bg-slate-800/50 group"
+                            >
+                                {/* 頭像 */}
+                                <Avatar className="h-10 w-10 border-2 border-slate-700 flex-shrink-0 group-hover:border-slate-600">
+                                    <AvatarImage src={friend.friendAvatar} />
+                                    <AvatarFallback className="bg-slate-800 text-slate-200">
+                                        {friend.friendName.substring(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
+
+                                {/* 名字與訊息 */}
+                                <div className="ml-3 overflow-hidden min-w-0">
+                                    <p className="font-semibold truncate text-slate-50">
+                                        {friend.friendName}
                                     </p>
-                                    <p className="text-xs text-slate-500">
-                                        Click to enter
+                                    <p className="text-sm text-slate-400 truncate">
+                                        {friend.lastMessage}
                                     </p>
                                 </div>
                             </div>
                         ))}
-                        
-                        {chatRoomIds.length === 0 && !isLoading && (
-                            <div className="p-4 text-center text-slate-500">No rooms found</div>
+
+                        {/* 空狀態 */}
+                        {!isLoading && friends.length === 0 && (
+                            <div className="text-center p-4 text-slate-500">
+                                No friends found. Create a chat!
+                            </div>
                         )}
                     </ScrollArea>
                 </CardContent>
@@ -86,20 +107,11 @@ export default function ChatRoomListPage() {
     );
 }
 
-// --- 輔助函式 ---
-
-// 讓長長的 ID 變成 "0x1234...abcd"
-function formatAddress(addr: string) {
-    if (!addr) return "";
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-}
-
-// 模擬抓取 ID 列表 (請替換成你真實的 Profile 欄位讀取)
-async function mockFetchMyRoomIds(profileId: string): Promise<string[]> {
-    // 假設你的 Profile 物件裡有一個欄位叫 `rooms: vector<ID>`
-    // 這裡先回傳假資料測試
+// 模擬函式：你需要替換成真實的邏輯
+async function mockGetMyChatRooms(profileId: string) {
+    // 回傳幾個測試用的 Chatroom ID (請確保這些 ID 在鏈上真實存在，不然會報錯)
+    // 如果你在測試網，可以先去 explorer 複製幾個 Object ID 貼在這裡測試
     return [
-        "0x0527c731057c72f0729792613764834479579698d248386a3472093740284720",
-        "0x127c731057c72f0729792613764834479579698d248386a3472093740284721",
-    ];
+       // "0x1234... (你的 Chatroom Object ID)"
+    ]; 
 }

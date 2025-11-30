@@ -13,6 +13,14 @@ export interface ProfileInfo {
   friendsList?: string[];
 }
 
+export interface FriendChat {
+  id: string;             // Chatroom 的 ID (用來跳轉)
+  friendProfileId: string;// 對方的 Profile ID
+  friendName: string;     // 對方的 username
+  friendAvatar: string;   // 對方的 avatar_url
+  friendBio: string;      // 對方的 bio
+}
+
 /**
  * Function to get all coins or filter by specific coin type
  * @param {SuiClient} suiClient - Sui client instance  
