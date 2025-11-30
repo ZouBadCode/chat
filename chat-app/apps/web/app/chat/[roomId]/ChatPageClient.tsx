@@ -410,9 +410,11 @@ export default function ChatPageClient({ roomId }: { roomId: string }) {
             handleZkSend();
         } else if (['image', 'video', 'audio'].includes(type)) {
             setUploadType(type as MessageType);
-            if (fileInputRef.current) {
-                fileInputRef.current.click();
-            }
+            setTimeout(() => {
+                if (fileInputRef.current) {
+                    fileInputRef.current.click();
+                }
+            }, 0);
         } else {
             console.log("Attachment type not implemented:", type);
         }
@@ -605,6 +607,18 @@ export default function ChatPageClient({ roomId }: { roomId: string }) {
 
                 {/* 下方輸入列 */}
                 <CardFooter className="p-3">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept={
+                            uploadType === 'image' ? "image/*" :
+                            uploadType === 'video' ? "video/*" :
+                            uploadType === 'audio' ? "audio/*" :
+                            "*"
+                        }
+                        onChange={handleFileChange}
+                    />
                     {isRecording ? (
                         <div className="flex w-full items-center gap-2 bg-slate-800/50 p-2 rounded-md">
                             <div className="flex-1 flex items-center gap-2">
