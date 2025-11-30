@@ -73,7 +73,6 @@ export default function FriendListPage() {
             try {
                 const info = await getProfileInfo({ suiClient, address: currentAccount.address });
                 setProfileId(info?.profileId || "");
-                console.log("Profile Info:", info);
             } catch (e) {
                 console.error(e);
             } finally {
