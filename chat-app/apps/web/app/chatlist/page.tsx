@@ -14,8 +14,9 @@ import { Card, CardHeader, CardContent } from "@workspace/ui/components/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { Button } from "@workspace/ui/components/button";
-import { getProfileInfo, getProfileCap } from "@/utils/queryer";
+import { getProfileInfo, getProfileCap, FriendChat, getFriendList } from "@/utils/queryer";
 import { add_friend } from "@/utils/tx/add_friend";
+import { get } from "http";
 export default function FriendListPage() {
     const router = useRouter();
     const suiClient = useSuiClient();
@@ -95,12 +96,9 @@ export default function FriendListPage() {
                 });
 
                 if (myProfile) {
-                    const myChatRoomIds = await mockGetMyChatRooms(myProfile.profileId);
-
-                    const enrichedFriends = await fetchFriendList(
+                    const enrichedFriends = await getFriendList(
                         suiClient,
                         myProfile.profileId,
-                        myChatRoomIds,
                     );
 
                     setFriends(enrichedFriends);
@@ -115,9 +113,17 @@ export default function FriendListPage() {
         init();
     }, [suiClient, currentAccount]);
 
-    const handleCreateChat = () => {
+    const handleCreateChat = async () => {
         try {
-            const tx = add_friend(ProfileCap, ProfileId, newFriendInput);
+            const newFriendProfile = await getProfileInfo({
+                suiClient,
+                address: newFriendInput,
+            });
+            if (!newFriendProfile) {
+                alert("Friend profile not found");
+                return;
+            }
+            const tx = add_friend(ProfileCap, ProfileId, newFriendProfile.profileId);
             signAndExecuteTransaction(
                 {
                     transaction: tx,
