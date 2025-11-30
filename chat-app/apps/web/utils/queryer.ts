@@ -51,7 +51,6 @@ export async function getCoin(params: { suiClient: SuiClient, address: string, t
 
 export async function getProfileCap(params: { suiClient: SuiClient, address: string, type?: string }): Promise<any> {
     try {
-        console.log('getProfileCap called with address:', params.address);
         const result = await params.suiClient.getOwnedObjects({
             owner: params.address,
             filter: {

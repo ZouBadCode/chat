@@ -50,7 +50,8 @@ export default function Page() {
       }
       try {
         const cap = await getProfileCap({ suiClient, address: currentAccount.address });
-        setHasProfile(!!cap); 
+        setHasProfile(!!cap.data[0].data.objectId); 
+        console.log("Profile exists:", !!cap.data[0].data.objectId);
       } catch (e) {
         console.error(e);
       } finally {
