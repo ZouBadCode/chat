@@ -187,6 +187,12 @@ export default function ChatPageClient({ roomId }: { roomId: string }) {
             try {
                 const res = await fetch(`/api/messages?roomId=${roomId}`);
                 const data = await res.json();
+
+                if (data.error) {
+                    console.error("Failed to fetch messages:", data.error);
+                    return;
+                }
+
                 if (!data.messages) return;
 
                 const secret = getStoredSecret(roomId);
