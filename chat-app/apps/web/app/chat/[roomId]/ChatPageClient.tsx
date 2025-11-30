@@ -35,8 +35,6 @@ import { encryptData, decryptData } from "@/utils/encryption";
 import { WalrusMessageUploader } from "@/components/walrus/uploader";
 import { Transaction } from "@mysten/sui/transactions";
 import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
-import { fromHex } from "@mysten/sui/utils";
-
 
 type Author = "me" | "other";
 
@@ -134,7 +132,18 @@ function ChatAttachmentOptions({ onClose, onAttach }: { onClose: () => void, onA
     );
 }
 
+function hexToBytes(hex: string): Uint8Array {
+    hex = hex.replace(/^0x/, "");
+    if (hex.length % 2 !== 0) hex = "0" + hex;
 
+    const len = hex.length / 2;
+    const arr = new Uint8Array(len);
+
+    for (let i = 0; i < len; i++) {
+        arr[i] = parseInt(hex.substr(i * 2, 2), 16);
+    }
+    return arr;
+}
 
 // ✅ Now a normal client component, receives roomId as string prop
 export default function ChatPageClient({ roomId }: { roomId: string }) {
@@ -277,12 +286,12 @@ export default function ChatPageClient({ roomId }: { roomId: string }) {
                         {
                             onSuccess: async (result) => {
                                 await sessionKey.setPersonalMessageSignature(result.signature);
-
+                                const bytes = hexToBytes(roomId);
                                 const tx = new Transaction();
                                 tx.moveCall({
                                     target: `${packageID}::chat_contract::profile_seal_approve`,
                                     arguments: [
-                                        tx.pure.vector('u8', fromHex(roomId)),
+                                        tx.pure.vector('u8', bytes),
                                         tx.object(profileCapId),
                                         tx.object(roomId)
                                     ],
